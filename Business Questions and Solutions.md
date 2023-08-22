@@ -6,5 +6,5 @@ This segment consists of four distinct components, encompassing our comprehensio
 ## Table of Contents
 - [Part A: Customer journey](https://github.com/Tori-Greg/Danny-Ma-SQL-Challenge_Foodie-fi/blob/main/Part%20A%3A%20Customer%20journey.md)
 - [Part B: Data analysis questions](https://github.com/Tori-Greg/Danny-Ma-SQL-Challenge_Foodie-fi/blob/main/Part%20B%3A%20Data%20analysis%20questions.md)
-- Part C: Challenge payment questions
-- Part D: Outside the box questions
+- [Part C: Challenge payment questions](https://github.com/Tori-Greg/Danny-Ma-SQL-Challenge_Foodie-fi/blob/main/Part%20C%3A%20Challenge%20payment%20questions.md)
+- [Part D: Outside the box questions]()
