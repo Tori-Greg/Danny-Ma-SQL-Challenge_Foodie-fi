@@ -260,6 +260,52 @@ This query examines subscription data. It determines the count of customers who 
 
 ---
 
+#### 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi?
+
+    With annualplan as
+     (
+	    Select Customer_id, Start_date as annualplandate
+	    From Foodie_fi..Subscriptions
+	    Where Plan_id = 3),
+       Trialplan as 
+       (
+	    Select Customer_id, Start_date as joindate
+	    From Foodie_fi..Subscriptions
+	    Where Plan_id = 0
+       )
+       Select Avg(DATEDIFF(Day, joindate, annualplandate)) as Avgdays
+       From annualplan
+       join Trialplan on annualplan.Customer_id = Trialplan.Customer_id;
+
+__Output:__
+
+| Avgdays |
+| -------------- |
+| 104            |
+
+---
+
+#### 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
+
+---
+
+#### 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
+**Query:**
+
+    SELECT COUNT(Customer_id) AS downgrade
+    FROM Foodie_fi.Subscriptions AS S
+        FULL OUTER JOIN Foodie_fi.Plans AS P ON S.Plan_id = P.Plan_id 
+    WHERE EXTRACT(YEAR FROM start_date) = 2020 AND S.plan_id > 1 AND S.Plan_id < 2;
+
+__Output:__
+
+| downgrade |
+| --------- |
+| 0         |
+
+This query analyzes subscription data to determine the count of customers who downgraded their plans. It focuses on subscriptions initiated in the year 2020 with plan IDs greater than 1 and less than 2. The query's purpose is to provide insight into the number of customers who switched to a lower plan during that specific year, assisting in understanding customer behavior related to plan changes.
+
+---
 
 
 
