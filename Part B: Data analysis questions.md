@@ -95,6 +95,174 @@ This query examines subscription data in the context of the "Foodie_fi" service.
 
 ---
 
+#### 4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place?
+
+__Query:__
+
+    WITH CTE AS (
+        SELECT
+            COUNT(Customer_id) AS Total,
+            (
+                SELECT COUNT(Plan_name)
+                FROM Foodie_fi.Subscriptions
+                FULL OUTER JOIN Foodie_fi.Plans
+                ON Subscriptions.Plan_id = Plans.Plan_id
+                WHERE Plan_name = 'churn'
+            ) AS Churn_no
+        FROM
+            Foodie_fi.Subscriptions
+        FULL OUTER JOIN
+            Foodie_fi.Plans
+        ON
+            Subscriptions.Plan_id = Plans.Plan_id
+    )
+    SELECT
+        Churn_no,
+        Total,
+        ROUND(Churn_no::NUMERIC / Total * 100, 1) AS Churn_rate_perc
+    FROM
+        CTE;
+
+__Output:__
+
+| churn_no | total | churn_rate_perc |
+| -------- | ----- | --------------- |
+| 307      | 2650  | 11.6            |
+
+This query analyzes subscription data to assess the rate of customer attrition. By creating a temporary data structure called a Common Table Expression (CTE), the query calculates the total count of customers as well as the count of those who have terminated their subscriptions. Through the amalgamation of subscription and plan specifics, the query determines the proportion of customers who have churned compared to the total, rounded to a single decimal point. The outcome provides insights into the speed at which customers are discontinuing their subscriptions, contributing to a more profound comprehension of retention trends.
+
+---
+
+#### 5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
+
+**Query:**
+
+    WITH CTE AS (
+        SELECT *,
+            LAG(plan_id, 1) OVER (PARTITION BY Customer_id ORDER BY Plan_id) AS Prevplan
+        FROM Foodie_fi.Subscriptions
+    )
+    SELECT
+        COUNT(Prevplan) AS Churn_no,
+        ROUND(COUNT(*) * 100 / (SELECT COUNT(DISTINCT customer_id) FROM Foodie_fi.Subscriptions), 0) AS Churn_Perc
+    FROM CTE
+    WHERE Plan_id = 4 AND Prevplan = 0;
+
+__Output:__
+
+| churn_no | churn_perc |
+| -------- | ---------- |
+| 92       | 9          |
+
+
+This query employs a Common Table Expression (CTE) to analyze subscription data. It calculates the count and percentage of customers who have churned immediately after their initial free trial. The churn percentage is determined based on the total count of distinct customer IDs who took part in the trial. This analysis provides insight into the proportion of customers who decide not to continue after their trial period, rounded to the nearest whole number.
+
+---
+
+#### 6. What is the number and percentage of customer plans after their initial free trial?
+
+**Query:**
+
+    WITH CTE AS (
+        SELECT
+            S.Plan_id,
+            Plan_name,
+            COUNT(S.Plan_id) AS Noofplans,
+            SUM(COUNT(S.Plan_id)) OVER ()::NUMERIC AS Total
+        FROM
+            Foodie_fi.Subscriptions AS S
+            FULL OUTER JOIN Foodie_fi.Plans AS P ON S.Plan_id = P.Plan_id 
+        WHERE
+            S.Plan_id <> 4
+        GROUP BY
+            S.Plan_id, Plan_name
+    )
+    SELECT
+        Plan_id,
+        Plan_name,
+        Noofplans,
+        Total,
+        ROUND((Noofplans / Total) * 100, 0) AS Plansperc
+    FROM
+        CTE
+    ORDER BY
+        Plan_id;
+
+| plan_id | plan_name     | noofplans | total | plansperc |
+| ------- | ------------- | --------- | ----- | --------- |
+| 0       | trial         | 1000      | 2343  | 43        |
+| 1       | basic monthly | 546       | 2343  | 23        |
+| 2       | pro monthly   | 539       | 2343  | 23        |
+| 3       | pro annual    | 258       | 2343  | 11        |
+
+This query utilizes a Common Table Expression (CTE) to analyze subscription data. It calculates the proportion of various plans based on their individual counts and the total count of plans, excluding a specific plan with ID 4. By combining subscription and plan details, the query determines the ratio of each plan's count to the overall count, rounded to the nearest whole number. The purpose of this query is to offer insights into the relative adoption rates of different plans, aiding in the comprehension of plan popularity compared to others.
+
+---
+
+#### 7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+
+
+**Query:**
+
+    WITH CTE AS (
+        SELECT
+            S.Plan_id,
+            Plan_name,
+            COUNT(Customer_id) AS customerscount,
+            SUM(COUNT(Customer_id)) OVER ()::NUMERIC AS Total
+        FROM
+            Foodie_fi.Subscriptions AS S
+            FULL OUTER JOIN Foodie_fi.Plans AS P ON S.Plan_id = P.Plan_id 
+        WHERE
+            Start_date = '2020-12-31'
+        GROUP BY
+            S.Plan_id, Plan_name
+    )
+    SELECT
+        Plan_id,
+        Plan_name,
+        customerscount,
+        Total,
+        ROUND((customerscount / Total) * 100)::NUMERIC AS Customersperc
+    FROM
+        CTE
+    GROUP BY
+        Plan_id, Plan_name, customerscount, Total
+    ORDER BY
+        Plan_id;
+
+__Output:__
+
+| plan_id | plan_name | customerscount | total | customersperc |
+| ------- | --------- | -------------- | ----- | ------------- |
+| 4       | churn     | 1              | 1     | 100           |
+
+This query utilizes a Common Table Expression (CTE) to examine subscription data. It determines the distribution of customers across various subscription plans by calculating the percentage each plan contributes to the total customer count. By combining information from subscriptions and plans, the query computes the proportional representation of customers for each plan compared to the overall number of customers. The query is specifically targeted at a particular starting date ('2020-12-31'). Its objective is to offer insights into the customer distribution across plans on that specific date, aiding in the comprehension of how different plans are performing in relation to each other.
+
+---
+
+#### 8. How many customers have upgraded to an annual plan in 2020?
+
+**Query:**
+
+    SELECT COUNT(Customer_id) AS customerscount
+    FROM Foodie_fi.Subscriptions AS S
+        FULL OUTER JOIN Foodie_fi.Plans AS P ON S.Plan_id = P.Plan_id 
+    WHERE EXTRACT(YEAR FROM Start_date) = 2020 AND Plan_name ILIKE '%annual%';
+
+__Output:__
+
+| customerscount |
+| -------------- |
+| 195            |
+
+This query examines subscription data. It determines the count of customers who have subscribed to plans containing "annual" in their names, with a focus on subscriptions initiated in the year 2020. The query's purpose is to shed light on the number of customers who chose annual plans during that specific year, contributing to a better understanding of the preference for such plans during that period.
+
+---
+
+
+
+
 
 
 
